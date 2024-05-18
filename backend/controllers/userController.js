@@ -1,36 +1,40 @@
-const express = require("express");
 const generateToken = require("../config/generateToken");
 const bcrypt = require("bcryptjs");
+const { pool } = require("../config/db");
 
-var users = [];
-
-const registerUser = async (req, res, next) => {
+const registerUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-
     if (!email || !password) {
       return res.status(400).json({
-        message: "email and Password are required!"
-      })
+        message: "Email and Password are required!",
+      });
     }
 
-    const userExists = users.some(user => user.email === email);
-    if (userExists) {
-      return res.status(500).json({
+    const userExists = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({
         message: "User already exists!",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = { email: email, password: hashedPassword };
-    users.push(newUser);
-    const token = generateToken(email);
+    console.log(email);
+    console.log(hashedPassword);
+    const newUser = await pool.query(
+      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
+      [email, hashedPassword]
+    );
+
+    const token = generateToken(newUser.rows[0].email);
     res.status(201).json({
       message: "User registered successfully",
       token,
     });
-    console.log(users);
   } catch (err) {
     console.log(err);
   }
@@ -41,26 +45,31 @@ const authUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'email and password are required' });
+      return res
+        .status(400)
+        .json({ message: "email and password are required" });
     }
 
-    const user = users.find(user => user.email === email);
+    const userExists = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    const user = userExists.rows[0];
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const token = generateToken(email);
 
-    res.status(200).json({ message: 'Signin successful', token });
+    res.status(200).json({ message: "Signin successful", token });
   } catch (err) {
     console.log(err);
   }
 };
-
 
 module.exports = { registerUser, authUser };

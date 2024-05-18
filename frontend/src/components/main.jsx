@@ -3,8 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenu,
@@ -45,8 +43,112 @@ import {
   Table,
 } from "@/components/ui/table";
 import { ResponsiveBar } from "@nivo/bar";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export function Main() {
+  const [transactions, setTransactions] = useState([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [categoryExpenses, setCategoryExpenses] = useState([]);
+  const [newTransaction, setNewTransaction] = useState({
+    date: "",
+    category: "",
+    amount: "",
+    description: "",
+    userId: 10, //harcoded for now
+  });
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8000/api/expense/get/${newTransaction.userId}`
+        );
+        setTransactions(response.data);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      }
+    };
+
+    fetchTransactions();
+  }, [newTransaction.userId]);
+
+  useEffect(() => {
+    const calculateExpenses = () => {
+      const total = transactions.reduce(
+        (sum, transaction) => sum + Number(transaction.amount),
+        0
+      );
+      setTotalExpenses(total);
+
+      const categorySums = transactions.reduce((acc, transaction) => {
+        if (!acc[transaction.category]) {
+          acc[transaction.category] = 0;
+        }
+        acc[transaction.category] += Number(transaction.amount);
+        return acc;
+      }, {});
+
+      const categories = Object.keys(categorySums).map((category) => ({
+        category,
+        amount: categorySums[category],
+        percentage:
+          total === 0 ? 0 : ((categorySums[category] / total) * 100).toFixed(2),
+      }));
+
+      setCategoryExpenses(categories);
+    };
+
+    calculateExpenses();
+  }, [transactions]);
+
+  const handleSaveTransaction = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/expense/save",
+        newTransaction
+      );
+      setTransactions([...transactions, response.data]);
+      setNewTransaction({
+        date: "",
+        category: "",
+        amount: "",
+        description: "",
+        userId: newTransaction.userId,
+      });
+    } catch (error) {
+      console.error("Error saving transaction:", error);
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/expense/delete/${id}`);
+      setTransactions(
+        transactions.filter((transaction) => transaction.id !== id)
+      );
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+    }
+  };
+
+  const handleUpdateTransaction = async (id, updatedTransaction) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:8000/api/expense/put/${id}`,
+        updatedTransaction
+      );
+      setTransactions(
+        transactions.map((transaction) =>
+          transaction.id === id ? response.data : transaction
+        )
+      );
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col w-full">
       <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
@@ -92,19 +194,19 @@ export function Main() {
             <Card>
               <CardHeader>
                 <CardDescription>Total Income</CardDescription>
-                <CardTitle>$5,234.00</CardTitle>
+                <CardTitle>₹5,234.00</CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader>
                 <CardDescription>Total Expenses</CardDescription>
-                <CardTitle>$3,456.00</CardTitle>
+                <CardTitle>₹{totalExpenses.toFixed(2)}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader>
                 <CardDescription>Account Balance</CardDescription>
-                <CardTitle>$12,345.00</CardTitle>
+                <CardTitle>₹12,345.00</CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -125,14 +227,36 @@ export function Main() {
                     </DrawerDescription>
                   </DrawerHeader>
                   <div className="px-4">
-                    <form className="space-y-4">
+                    <form
+                      className="space-y-4"
+                      onSubmit={handleSaveTransaction}
+                    >
                       <div className="grid gap-2">
                         <Label htmlFor="date">Date</Label>
-                        <Input id="date" type="date" />
+                        <Input
+                          id="date"
+                          type="date"
+                          value={newTransaction.date}
+                          onChange={(e) =>
+                            setNewTransaction({
+                              ...newTransaction,
+                              date: e.target.value,
+                            })
+                          }
+                        />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="category">Category</Label>
-                        <Select id="category">
+                        <Select
+                          id="category"
+                          value={newTransaction.category}
+                          onValueChange={(value) =>
+                            setNewTransaction({
+                              ...newTransaction,
+                              category: value,
+                            })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
@@ -148,20 +272,39 @@ export function Main() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="amount">Amount</Label>
-                        <Input id="amount" type="number" />
+                        <Input
+                          id="amount"
+                          type="number"
+                          value={newTransaction.amount}
+                          onChange={(e) =>
+                            setNewTransaction({
+                              ...newTransaction,
+                              amount: e.target.value,
+                            })
+                          }
+                        />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" />
+                        <Textarea
+                          id="description"
+                          value={newTransaction.description}
+                          onChange={(e) =>
+                            setNewTransaction({
+                              ...newTransaction,
+                              description: e.target.value,
+                            })
+                          }
+                        />
                       </div>
+                      <DrawerFooter>
+                        <Button type="submit">Save Transaction</Button>
+                        <DrawerClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DrawerClose>
+                      </DrawerFooter>
                     </form>
                   </div>
-                  <DrawerFooter>
-                    <Button type="submit">Save Transaction</Button>
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                  </DrawerFooter>
                 </DrawerContent>
               </Drawer>
               <h2 className="font-semibold text-lg md:text-xl">Transactions</h2>
@@ -178,58 +321,46 @@ export function Main() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>May 15, 2023</TableCell>
-                    <TableCell>Rent</TableCell>
-                    <TableCell>$1,200.00</TableCell>
-                    <TableCell>Rent for May</TableCell>
-                    <TableCell className="text-right flex items-center justify-end gap-2">
-                      <Button size="icon" variant="ghost">
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>May 10, 2023</TableCell>
-                    <TableCell>Groceries</TableCell>
-                    <TableCell>$156.78</TableCell>
-                    <TableCell>Weekly grocery shopping</TableCell>
-                    <TableCell className="text-right flex items-center justify-end gap-2">
-                      <Button size="icon" variant="ghost">
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>May 5, 2023</TableCell>
-                    <TableCell>Utilities</TableCell>
-                    <TableCell>$234.56</TableCell>
-                    <TableCell>Electricity bill</TableCell>
-                    <TableCell className="text-right flex items-center justify-end gap-2">
-                      <Button size="icon" variant="ghost">
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>May 1, 2023</TableCell>
-                    <TableCell>Entertainment</TableCell>
-                    <TableCell>$78.90</TableCell>
-                    <TableCell>Movie tickets</TableCell>
-                    <TableCell className="text-right flex items-center justify-end gap-2">
-                      <Button size="icon" variant="ghost">
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{transaction.category}</TableCell>
+                      <TableCell>
+                        ₹{Number(transaction.amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            handleDeleteTransaction(transaction.id)
+                          }
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            handleUpdateTransaction(transaction.id, {
+                              ...transaction,
+                              amount: transaction.amount + 10,
+                            })
+                          }
+                        >
+                          <DeleteIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           </div>
+
           <div className="grid md:grid-cols-2 gap-6">
             <div className="border shadow-sm rounded-lg">
               <Table>
@@ -241,43 +372,38 @@ export function Main() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>Rent</TableCell>
-                    <TableCell>$1,200.00</TableCell>
-                    <TableCell>34.78%</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Groceries</TableCell>
-                    <TableCell>$156.78</TableCell>
-                    <TableCell>4.54%</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Utilities</TableCell>
-                    <TableCell>$234.56</TableCell>
-                    <TableCell>6.79%</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Entertainment</TableCell>
-                    <TableCell>$78.90</TableCell>
-                    <TableCell>2.29%</TableCell>
-                  </TableRow>
+                  {categoryExpenses.map((expense, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{expense.category}</TableCell>
+                      <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
+                      <TableCell>{expense.percentage}%</TableCell>
+                    </TableRow>
+                  ))}
                   <TableRow>
                     <TableCell>Total</TableCell>
-                    <TableCell>$3,456.00</TableCell>
+                    <TableCell>₹{totalExpenses.toFixed(2)}</TableCell>
                     <TableCell>100%</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </div>
+
             <Card>
               <div className="flex justify-center">
                 <CardHeader>
                   <CardTitle>Expense Breakdown</CardTitle>
                 </CardHeader>
               </div>
+
               <div className="flex justify-center">
                 <CardContent>
-                  <BarChart className="aspect-square w-[450px]" />
+                  <BarChart
+                    data={categoryExpenses.map(({ category, value }) => ({
+                      category,
+                      value,
+                    }))}
+                    className="aspect-square w-[450px]"
+                  />
                 </CardContent>
               </div>
             </Card>
@@ -288,20 +414,13 @@ export function Main() {
   );
 }
 
-function BarChart(props) {
+function BarChart({ data, ...props }) {
   return (
     <div {...props} style={{ height: 250 }}>
       <ResponsiveBar
-        data={[
-          { month: "Jan", value: 111 },
-          { month: "Feb", value: 157 },
-          { month: "Mar", value: 129 },
-          { month: "Apr", value: 150 },
-          { month: "May", value: 119 },
-          { month: "Jun", value: 72 },
-        ]}
+        data={data}
         keys={["value"]}
-        indexBy="month"
+        indexBy="category"
         margin={{ top: 10, right: 10, bottom: 50, left: 50 }}
         padding={0.3}
         colors={{ scheme: "accent" }}
@@ -312,7 +431,7 @@ function BarChart(props) {
           tickSize: 5,
           tickPadding: 5,
           tickRotation: 0,
-          legend: "Month",
+          legend: "Category",
           legendPosition: "middle",
           legendOffset: 32,
         }}
@@ -347,6 +466,26 @@ function BarChart(props) {
         role="application"
       />
     </div>
+  );
+}
+function DeleteIcon(props) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" />
+      <line x1="18" x2="12" y1="9" y2="15" />
+      <line x1="12" x2="18" y1="9" y2="15" />
+    </svg>
   );
 }
 

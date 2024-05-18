@@ -10,13 +10,67 @@ import { TabsTrigger, TabsList, TabsContent, Tabs } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormLabel } from "./ui/form";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function SignInComponent() {
-  const submitHandlerSignup = () => {};
+  const [signupData, setSignupData] = useState({ email: "", password: "" });
+  const [signinData, setSigninData] = useState({ email: "", password: "" });
 
-  const submitHandlerSignin = () => {};
+  const handleChangeSignup = (e) => {
+    setSignupData({ ...signupData, [e.target.id]: e.target.value });
+  };
+
+  const handleChangeSignin = (e) => {
+    setSigninData({ ...signinData, [e.target.id]: e.target.value });
+  };
+
+  const submitHandlerSignup = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/user/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: signupData.email,
+          password: signupData.password,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message);
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const submitHandlerSignin = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: signinData.email,
+          password: signinData.password,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message);
+        window.location.href = "/home";
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   return (
     <Card className="mx-auto max-w-sm">
@@ -34,16 +88,23 @@ export default function SignInComponent() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="John Doe" />
-                </div>
-                <div className="space-y-1">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" placeholder="m@example.com" type="email" />
+                  <Input
+                    id="email"
+                    placeholder="m@example.com"
+                    type="email"
+                    value={signupData.email}
+                    onChange={handleChangeSignup}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={signupData.password}
+                    onChange={handleChangeSignup}
+                  />
                 </div>
               </div>
               <Button className="w-full" onClick={submitHandlerSignup}>
@@ -55,18 +116,27 @@ export default function SignInComponent() {
             <div className="space-y-2">
               <div className="space-y-1">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="m@example.com" type="email" />
+                <Input
+                  id="email"
+                  placeholder="m@example.com"
+                  type="email"
+                  value={signinData.email}
+                  onChange={handleChangeSignin}
+                />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" />
+                <Input
+                  id="password"
+                  type="password"
+                  value={signinData.password}
+                  onChange={handleChangeSignin}
+                />
               </div>
               <div>
-                <Link href="/home">
-                  <Button className="w-full" onClick={submitHandlerSignin}>
-                    Sign In
-                  </Button>
-                </Link>
+                <Button className="w-full" onClick={submitHandlerSignin}>
+                  Sign In
+                </Button>
               </div>
             </div>
           </TabsContent>
