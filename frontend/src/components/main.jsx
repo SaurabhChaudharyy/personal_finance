@@ -50,6 +50,10 @@ export function Main() {
   const [transactions, setTransactions] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [categoryExpenses, setCategoryExpenses] = useState([]);
+  const handleEditTransaction = (id) => {
+    setEditingTransaction(id);
+  };
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [newTransaction, setNewTransaction] = useState({
     date: "",
     category: "",
@@ -91,7 +95,7 @@ export function Main() {
 
       const categories = Object.keys(categorySums).map((category) => ({
         category,
-        amount: categorySums[category],
+        value: categorySums[category],
         percentage:
           total === 0 ? 0 : ((categorySums[category] / total) * 100).toFixed(2),
       }));
@@ -117,6 +121,7 @@ export function Main() {
         description: "",
         userId: newTransaction.userId,
       });
+      document.getElementById("transactionDrawer").click();
     } catch (error) {
       console.error("Error saving transaction:", error);
     }
@@ -148,6 +153,30 @@ export function Main() {
       console.error("Error updating transaction:", error);
     }
   };
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [newIncome, setNewIncome] = useState(totalIncome);
+  const [balance, setBalance] = useState(0);
+
+  const handleEditClick = () => {
+    setEditing(true);
+    setNewIncome(totalIncome);
+  };
+
+  const handleSaveClick = () => {
+    setEditing(false);
+    setTotalIncome(newIncome);
+  };
+
+  const handleCancelClick = () => {
+    setEditing(false);
+
+    setNewIncome(totalIncome);
+  };
+
+  useEffect(() => {
+    setBalance(totalIncome - totalExpenses);
+  }, [totalExpenses, totalIncome]);
 
   return (
     <div className="flex flex-col w-full">
@@ -192,10 +221,50 @@ export function Main() {
         <div className="grid gap-6">
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
-              <CardHeader>
-                <CardDescription>Total Income</CardDescription>
-                <CardTitle>₹5,234.00</CardTitle>
-              </CardHeader>
+              <div className="relative">
+                {editing ? (
+                  <>
+                    <input
+                      type="number"
+                      value={newIncome}
+                      onChange={(e) => setNewIncome(parseFloat(e.target.value))}
+                      className="w-full p-1 border border-gray-300 rounded"
+                    />
+                    <div className="absolute top-0 right-0 m-2 space-x-2">
+                      <Button
+                        variant="outline"
+                        size="normal"
+                        onClick={handleSaveClick}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="normal"
+                        variant="outline"
+                        onClick={handleCancelClick}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <CardHeader>
+                      <CardDescription>Total Income</CardDescription>
+                      <CardTitle>₹{totalIncome.toFixed(2)}</CardTitle>
+                    </CardHeader>
+                    <div className="absolute top-0 right-0 m-2">
+                      <Button
+                        size="normal"
+                        variant="ghost"
+                        onClick={handleEditClick}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </Card>
             <Card>
               <CardHeader>
@@ -205,8 +274,8 @@ export function Main() {
             </Card>
             <Card>
               <CardHeader>
-                <CardDescription>Account Balance</CardDescription>
-                <CardTitle>₹12,345.00</CardTitle>
+                <CardDescription>Balance</CardDescription>
+                <CardTitle>₹{balance.toFixed(2)}</CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -299,7 +368,7 @@ export function Main() {
                       </div>
                       <DrawerFooter>
                         <Button type="submit">Save Transaction</Button>
-                        <DrawerClose asChild>
+                        <DrawerClose asChild id="transactionDrawer">
                           <Button variant="outline">Cancel</Button>
                         </DrawerClose>
                       </DrawerFooter>
@@ -341,16 +410,7 @@ export function Main() {
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            handleUpdateTransaction(transaction.id, {
-                              ...transaction,
-                              amount: transaction.amount + 10,
-                            })
-                          }
-                        >
+                        <Button size="icon" variant="ghost">
                           <DeleteIcon className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -375,7 +435,7 @@ export function Main() {
                   {categoryExpenses.map((expense, index) => (
                     <TableRow key={index}>
                       <TableCell>{expense.category}</TableCell>
-                      <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
+                      <TableCell>₹{expense.value.toFixed(2)}</TableCell>
                       <TableCell>{expense.percentage}%</TableCell>
                     </TableRow>
                   ))}
