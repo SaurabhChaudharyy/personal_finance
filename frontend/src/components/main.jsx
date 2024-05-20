@@ -50,10 +50,6 @@ export function Main() {
   const [transactions, setTransactions] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [categoryExpenses, setCategoryExpenses] = useState([]);
-  const handleEditTransaction = (id) => {
-    setEditingTransaction(id);
-  };
-  const [editingTransaction, setEditingTransaction] = useState(null);
   const [newTransaction, setNewTransaction] = useState({
     date: "",
     category: "",
@@ -138,21 +134,21 @@ export function Main() {
     }
   };
 
-  const handleUpdateTransaction = async (id, updatedTransaction) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:8000/api/expense/put/${id}`,
-        updatedTransaction
-      );
-      setTransactions(
-        transactions.map((transaction) =>
-          transaction.id === id ? response.data : transaction
-        )
-      );
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-    }
-  };
+  // const handleUpdateTransaction = async (id, updatedTransaction) => {
+  //   try {
+  //     const response = await axios.put(
+  //       `http://localhost:8000/api/expense/put/${id}`,
+  //       updatedTransaction
+  //     );
+  //     setTransactions(
+  //       transactions.map((transaction) =>
+  //         transaction.id === id ? response.data : transaction
+  //       )
+  //     );
+  //   } catch (error) {
+  //     console.error("Error updating transaction:", error);
+  //   }
+  // };
   const [totalIncome, setTotalIncome] = useState(0);
   const [editing, setEditing] = useState(false);
   const [newIncome, setNewIncome] = useState(totalIncome);
@@ -190,7 +186,7 @@ export function Main() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className="rounded-full border border-gray-200 w-8 h-8 dark:border-gray-800 dark:border-gray-800"
+              className="rounded-full border border-gray-200 w-8 h-8 dark:border-gray-800"
               size="icon"
               variant="ghost"
             >
@@ -549,7 +545,7 @@ function DeleteIcon(props) {
   );
 }
 
-function PlusIcon(props) {
+function PlusIcon() {
   return (
     <div className="flex">
       <span>Add</span>
