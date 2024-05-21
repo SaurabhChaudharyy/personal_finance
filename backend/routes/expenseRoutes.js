@@ -4,12 +4,16 @@ const {
   updateExpense,
   deleteExpense,
   getExpense,
+  getIncome,
+  updateIncome,
 } = require("../controllers/expenseController");
 
 const router = express.Router();
 
 router.route("/save").post(saveExpense);
 router.get("/get/:userId", getExpense);
+router.get("/get/income/:userId", getIncome);
+router.put("/put/updateincome/:userId", updateIncome);
 router.put("/put/:id", updateExpense);
 router.delete("/delete/:id", deleteExpense);
 

@@ -10,8 +10,8 @@ import { TabsTrigger, TabsList, TabsContent, Tabs } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useState } from "react";
+import axios from "axios";
 
 export default function SignInComponent() {
   const [signupData, setSignupData] = useState({ email: "", password: "" });
@@ -27,48 +27,62 @@ export default function SignInComponent() {
 
   const submitHandlerSignup = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/user/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        "http://localhost:8000/api/user/signup",
+        {
           email: signupData.email,
           password: signupData.password,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message);
-      } else {
-        alert(data.message);
-      }
+        }
+      );
+      alert(response.data.message);
     } catch (error) {
-      console.error("Error:", error);
+      if (error.response) {
+        alert(error.response.data.message);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        alert("No response from server.");
+      } else {
+        console.error("Error setting up request:", error.message);
+        alert("An error occurred.");
+      }
     }
   };
 
   const submitHandlerSignin = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/user/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        "http://localhost:8000/api/user/login",
+        {
           email: signinData.email,
           password: signinData.password,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message);
+        }
+      );
+      const data = response.data;
+      alert(data.message);
+      if (response.status === 200) {
         window.location.href = "/home";
+        const userId = data.userId;
+        if (userId) {
+          console.log("Storing userId in localStorage:", userId);
+          localStorage.setItem("userId", userId);
+        } else {
+          console.error("userId not found in response:", data);
+        }
       } else {
+        console.log("Signin failed:", data);
         alert(data.message);
       }
     } catch (error) {
-      console.error("Error:", error);
+      if (error.response) {
+        console.error("Signin failed:", error.response.data);
+        alert(error.response.data.message);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        alert("No response from server.");
+      } else {
+        console.error("Error setting up request:", error.message);
+        alert("An error occurred while setting up the request.");
+      }
     }
   };
 
@@ -88,7 +102,7 @@ export default function SignInComponent() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Username</Label>
                   <Input
                     id="email"
                     placeholder="m@example.com"
@@ -115,7 +129,7 @@ export default function SignInComponent() {
           <TabsContent value="signin">
             <div className="space-y-2">
               <div className="space-y-1">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Username</Label>
                 <Input
                   id="email"
                   placeholder="m@example.com"

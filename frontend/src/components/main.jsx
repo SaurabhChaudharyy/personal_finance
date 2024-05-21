@@ -55,8 +55,26 @@ export function Main() {
     category: "",
     amount: "",
     description: "",
-    userId: 10, //harcoded for now
+    userId: 0,
   });
+
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [newIncome, setNewIncome] = useState(totalIncome);
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    console.log("Retrieved userId from localStorage:", userId);
+    if (userId) {
+      setNewTransaction((prevState) => ({
+        ...prevState,
+        userId: parseInt(userId, 10),
+      }));
+      console.log("Updated newTransaction state with userId:", userId);
+      fetchTotalIncome(parseInt(userId, 10));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -70,7 +88,9 @@ export function Main() {
       }
     };
 
-    fetchTransactions();
+    if (newTransaction.userId) {
+      fetchTransactions();
+    }
   }, [newTransaction.userId]);
 
   useEffect(() => {
@@ -101,6 +121,18 @@ export function Main() {
 
     calculateExpenses();
   }, [transactions]);
+
+  const fetchTotalIncome = async (userId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/api/expense/get/income/${userId}`
+      );
+      const incomeData = response.data[0];
+      setTotalIncome(parseFloat(incomeData.totalincome));
+    } catch (error) {
+      console.error("Error fetching total income:", error);
+    }
+  };
 
   const handleSaveTransaction = async (e) => {
     e.preventDefault();
@@ -134,39 +166,37 @@ export function Main() {
     }
   };
 
-  // const handleUpdateTransaction = async (id, updatedTransaction) => {
-  //   try {
-  //     const response = await axios.put(
-  //       `http://localhost:8000/api/expense/put/${id}`,
-  //       updatedTransaction
-  //     );
-  //     setTransactions(
-  //       transactions.map((transaction) =>
-  //         transaction.id === id ? response.data : transaction
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error("Error updating transaction:", error);
-  //   }
-  // };
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [editing, setEditing] = useState(false);
-  const [newIncome, setNewIncome] = useState(totalIncome);
-  const [balance, setBalance] = useState(0);
-
   const handleEditClick = () => {
     setEditing(true);
     setNewIncome(totalIncome);
   };
 
   const handleSaveClick = () => {
-    setEditing(false);
-    setTotalIncome(newIncome);
+    const userId = newTransaction.userId;
+    console.log(userId);
+    if (!userId) {
+      console.error("User ID not found");
+      return;
+    }
+    const requestBody = {
+      newIncome: newIncome,
+    };
+    axios
+      .put(
+        `http://localhost:8000/api/expense/put/updateincome/${userId}`,
+        requestBody
+      )
+      .then((response) => {
+        setEditing(false);
+        setTotalIncome(newIncome);
+      })
+      .catch((error) => {
+        console.error("Error updating income:", error);
+      });
   };
 
   const handleCancelClick = () => {
     setEditing(false);
-
     setNewIncome(totalIncome);
   };
 
@@ -176,6 +206,7 @@ export function Main() {
 
   return (
     <div className="flex flex-col w-full">
+      <p>User ID: {newTransaction.userId}</p>
       <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
         <Link className="lg:hidden" href="#">
           <span className="sr-only">Home</span>
@@ -247,7 +278,9 @@ export function Main() {
                   <>
                     <CardHeader>
                       <CardDescription>Total Income</CardDescription>
-                      <CardTitle>₹{totalIncome.toFixed(2)}</CardTitle>
+                      <CardTitle>
+                        ₹{totalIncome ? totalIncome.toFixed(2) : "0.00"}
+                      </CardTitle>
                     </CardHeader>
                     <div className="absolute top-0 right-0 m-2">
                       <Button
@@ -259,6 +292,11 @@ export function Main() {
                       </Button>
                     </div>
                   </>
+                )}
+                {!editing && totalIncome === 0 && (
+                  <div className="absolute bottom-0 left-0 m-2 w-[150px] h-[40px] bg-red-100 text-red-800 border border-red-200 rounded flex items-center justify-center text-xs">
+                    <p>Total income is 0. Please update your income.</p>
+                  </div>
                 )}
               </div>
             </Card>
@@ -406,9 +444,9 @@ export function Main() {
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost">
+                        {/* <Button size="icon" variant="ghost">
                           <DeleteIcon className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                       </TableCell>
                     </TableRow>
                   ))}

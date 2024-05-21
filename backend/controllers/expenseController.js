@@ -38,6 +38,53 @@ const getExpense = async (req, res) => {
   }
 };
 
+const getIncome = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(
+      "select totalincome from user_income WHERE userid = $1",
+      [userId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error retrieving expenses:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+const updateIncome = async (req, res) => {
+  const { userId } = req.params;
+  const { newIncome } = req.body;
+
+  if (!newIncome || !userId) {
+    return res.status(400).json({ error: "Income and userId are required." });
+  }
+
+  try {
+    const checkResult = await pool.query(
+      "SELECT * FROM user_income WHERE userid = $1;",
+      [userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      const insertResult = await pool.query(
+        "INSERT INTO user_income (userid, totalincome) VALUES ($1, $2) RETURNING *;",
+        [userId, newIncome]
+      );
+      return res.status(201).json(insertResult.rows[0]);
+    } else {
+      const updateResult = await pool.query(
+        "UPDATE user_income SET totalincome = $1 WHERE userid = $2 RETURNING *;",
+        [newIncome, userId]
+      );
+      return res.status(200).json(updateResult.rows[0]);
+    }
+  } catch (error) {
+    console.error("Error updating income:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 const deleteExpense = async (req, res) => {
   const { id } = req.params;
 
@@ -85,4 +132,11 @@ const updateExpense = async (req, res) => {
   }
 };
 
-module.exports = { saveExpense, getExpense, deleteExpense, updateExpense };
+module.exports = {
+  saveExpense,
+  getExpense,
+  deleteExpense,
+  updateExpense,
+  getIncome,
+  updateIncome,
+};
