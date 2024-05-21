@@ -6,7 +6,7 @@ const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const { connectionCheck } = require("./config/db");
-const authenticateToken = require("../middleware/auth");
+const authenticateToken = require("./middleware/auth");
 const cors = require("cors");
 dotenv.config();
 
@@ -26,12 +26,12 @@ connectionCheck();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.send({
-    message: "Personal Finance API",
-  });
-});
-router.get("/home", authenticateToken, (req, res) => {
+// app.get("/", (req, res) => {
+//   res.send({
+//     message: "Personal Finance API",
+//   });
+// });
+app.get("/home", authenticateToken, (req, res) => {
   res.send("Welcome to your home page");
 });
 

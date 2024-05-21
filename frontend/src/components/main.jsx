@@ -63,15 +63,27 @@ export function Main() {
   const [balance, setBalance] = useState(0);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
+  const [isLoggedIn, setLoggedIn] = useState(false);
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token != null) {
+      setLoggedIn(true);
+    }
+  }, []);
+
   useEffect(() => {
     const userId = localStorage.getItem("userId");
-    console.log("Retrieved userId from localStorage:", userId);
+    // console.log("Retrieved userId from localStorage:", userId);
+    if (!userId) {
+      window.location.href = "/";
+      return;
+    }
     if (userId) {
       setNewTransaction((prevState) => ({
         ...prevState,
         userId: parseInt(userId, 10),
       }));
-      console.log("Updated newTransaction state with userId:", userId);
+      // console.log("Updated newTransaction state with userId:", userId);
       fetchTotalIncome(parseInt(userId, 10));
     }
   }, []);
@@ -230,394 +242,418 @@ export function Main() {
 
   return (
     <div className="flex flex-col w-full">
-      <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
-        <Link className="lg:hidden" href="#">
-          <span className="sr-only">Home</span>
-        </Link>
-        <div className="flex-1">
-          <h1 className="font-semibold text-lg md:text-xl">Personal Finance</h1>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              className="rounded-full border border-gray-200 w-8 h-8 dark:border-gray-800"
-              size="icon"
-              variant="ghost"
-            >
-              <img
-                alt="Avatar"
-                className="rounded-full"
-                height="32"
-                src="https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg"
-                style={{
-                  aspectRatio: "32/32",
-                  objectFit: "cover",
-                }}
-                width="32"
-              />
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <Link href="/signin" passHref>
-              <DropdownMenuItem asChild>
-                <a>Logout</a>
-              </DropdownMenuItem>
+      {isLoggedIn ? (
+        <>
+          <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
+            <Link className="lg:hidden" href="#">
+              <span className="sr-only">Home</span>
             </Link>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-        <div className="grid gap-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <div className="relative">
-                {editing ? (
-                  <>
-                    <input
-                      type="number"
-                      value={newIncome}
-                      onChange={(e) => setNewIncome(parseFloat(e.target.value))}
-                      className="w-full p-1 border border-gray-300 rounded"
-                    />
-                    <div className="absolute top-0 right-0 m-2 space-x-2">
-                      <Button
-                        variant="outline"
-                        size="normal"
-                        onClick={handleSaveClick}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="normal"
-                        variant="outline"
-                        onClick={handleCancelClick}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <CardHeader>
-                      <CardDescription>Total Income</CardDescription>
-                      <CardTitle>
-                        ₹{totalIncome ? totalIncome.toFixed(2) : "0.00"}
-                      </CardTitle>
-                    </CardHeader>
-                    <div className="absolute top-0 right-0 m-2">
-                      <Button
-                        size="normal"
-                        variant="ghost"
-                        onClick={handleEditClick}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                  </>
-                )}
-                {!editing && totalIncome === 0 && (
-                  <div className="absolute bottom-0 left-0 m-2 w-[150px] h-[40px] bg-red-100 text-red-800 border border-red-200 rounded flex items-center justify-center text-xs">
-                    <p>Total income is 0. Please update your income.</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardDescription>Total Expenses</CardDescription>
-                <CardTitle>₹{totalExpenses.toFixed(2)}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardDescription>Balance</CardDescription>
-                <CardTitle>₹{balance.toFixed(2)}</CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
-          <div className="grid gap-6">
-            <div className="flex items-center gap-4">
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <Button size="icon" variant="outline">
-                    <PlusIcon className="h-4 w-4" />
-                    <span className="sr-only">Add Transaction</span>
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>Add Transaction</DrawerTitle>
-                    <DrawerDescription>
-                      Enter the details of your new transaction.
-                    </DrawerDescription>
-                  </DrawerHeader>
-                  <div className="px-4">
-                    <form
-                      className="space-y-4"
-                      onSubmit={handleSaveTransaction}
-                    >
-                      <div className="grid gap-2">
-                        <Label htmlFor="date">Date</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={newTransaction.date}
-                          onChange={(e) =>
-                            setNewTransaction({
-                              ...newTransaction,
-                              date: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select
-                          id="category"
-                          value={newTransaction.category}
-                          onValueChange={(value) =>
-                            setNewTransaction({
-                              ...newTransaction,
-                              category: value,
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="rent">Rent</SelectItem>
-                            <SelectItem value="groceries">Groceries</SelectItem>
-                            <SelectItem value="utilities">Utilities</SelectItem>
-                            <SelectItem value="entertainment">
-                              Entertainment
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="amount">Amount</Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          value={newTransaction.amount}
-                          onChange={(e) =>
-                            setNewTransaction({
-                              ...newTransaction,
-                              amount: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={newTransaction.description}
-                          onChange={(e) =>
-                            setNewTransaction({
-                              ...newTransaction,
-                              description: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <DrawerFooter>
-                        <Button type="submit">Save Transaction</Button>
-                        <DrawerClose asChild id="transactionDrawer">
-                          <Button variant="outline">Cancel</Button>
-                        </DrawerClose>
-                      </DrawerFooter>
-                    </form>
-                  </div>
-                </DrawerContent>
-              </Drawer>
-              <h2 className="font-semibold text-lg md:text-xl">Transactions</h2>
+            <div className="flex-1">
+              <h1 className="font-semibold text-lg md:text-xl">
+                Personal Finance
+              </h1>
             </div>
-            <div className="border shadow-sm rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        {new Date(transaction.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{transaction.category}</TableCell>
-                      <TableCell>
-                        ₹{Number(transaction.amount).toFixed(2)}
-                      </TableCell>
-                      <TableCell>{transaction.description}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            handleDeleteTransaction(transaction.id)
-                          }
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEditTransaction(transaction)}
-                        >
-                          <DeleteIcon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="border shadow-sm rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Percentage</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categoryExpenses.map((expense, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{expense.category}</TableCell>
-                      <TableCell>₹{expense.value.toFixed(2)}</TableCell>
-                      <TableCell>{expense.percentage}%</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow>
-                    <TableCell>Total</TableCell>
-                    <TableCell>₹{totalExpenses.toFixed(2)}</TableCell>
-                    <TableCell>100%</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-
-            <Card>
-              <div className="flex justify-center">
-                <CardHeader>
-                  <CardTitle>Expense Breakdown</CardTitle>
-                </CardHeader>
-              </div>
-
-              <div className="flex justify-center">
-                <CardContent>
-                  <BarChart
-                    data={categoryExpenses.map(({ category, value }) => ({
-                      category,
-                      value,
-                    }))}
-                    className="aspect-square w-[450px]"
-                  />
-                </CardContent>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </main>
-      <Drawer>
-        <DrawerTrigger asChild>
-          <Button id="updateTransactionDrawer" style={{ display: "none" }} />
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Update Transaction</DrawerTitle>
-            <DrawerDescription>
-              Edit the details of your transaction.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4">
-            <form className="space-y-4" onSubmit={handleUpdateTransaction}>
-              <div className="grid gap-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={editingTransaction?.date || ""}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      date: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  id="category"
-                  value={editingTransaction?.category || ""}
-                  onValueChange={(value) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      category: value,
-                    })
-                  }
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="rounded-full border border-gray-200 w-8 h-8 dark:border-gray-800"
+                  size="icon"
+                  variant="ghost"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="groceries">Groceries</SelectItem>
-                    <SelectItem value="utilities">Utilities</SelectItem>
-                    <SelectItem value="entertainment">Entertainment</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <img
+                    alt="Avatar"
+                    className="rounded-full"
+                    height="32"
+                    src="https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg"
+                    style={{
+                      aspectRatio: "32/32",
+                      objectFit: "cover",
+                    }}
+                    width="32"
+                  />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <Link href="/" passHref>
+                  <DropdownMenuItem asChild>
+                    <a>Logout</a>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </header>
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+            <div className="grid gap-6">
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card>
+                  <div className="relative">
+                    {editing ? (
+                      <>
+                        <input
+                          type="number"
+                          value={newIncome}
+                          onChange={(e) =>
+                            setNewIncome(parseFloat(e.target.value))
+                          }
+                          className="w-full p-1 border border-gray-300 rounded"
+                        />
+                        <div className="absolute top-0 right-0 m-2 space-x-2">
+                          <Button
+                            variant="outline"
+                            size="normal"
+                            onClick={handleSaveClick}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="normal"
+                            variant="outline"
+                            onClick={handleCancelClick}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <CardHeader>
+                          <CardDescription>Total Income</CardDescription>
+                          <CardTitle>
+                            ₹{totalIncome ? totalIncome.toFixed(2) : "0.00"}
+                          </CardTitle>
+                        </CardHeader>
+                        <div className="absolute top-0 right-0 m-2">
+                          <Button
+                            size="normal"
+                            variant="ghost"
+                            onClick={handleEditClick}
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {!editing && totalIncome === 0 && (
+                      <div className="absolute bottom-0 left-0 m-2 w-[150px] h-[40px] bg-red-100 text-red-800 border border-red-200 rounded flex items-center justify-center text-xs">
+                        <p>Total income is 0. Please update your income.</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardDescription>Total Expenses</CardDescription>
+                    <CardTitle>₹{totalExpenses.toFixed(2)}</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardDescription>Balance</CardDescription>
+                    <CardTitle>₹{balance.toFixed(2)}</CardTitle>
+                  </CardHeader>
+                </Card>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={editingTransaction?.amount || ""}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      amount: e.target.value,
-                    })
-                  }
-                />
+              <div className="grid gap-6">
+                <div className="flex items-center gap-4">
+                  <Drawer>
+                    <DrawerTrigger asChild>
+                      <Button size="icon" variant="outline">
+                        <PlusIcon className="h-4 w-4" />
+                        <span className="sr-only">Add Transaction</span>
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <DrawerHeader>
+                        <DrawerTitle>Add Transaction</DrawerTitle>
+                        <DrawerDescription>
+                          Enter the details of your new transaction.
+                        </DrawerDescription>
+                      </DrawerHeader>
+                      <div className="px-4">
+                        <form
+                          className="space-y-4"
+                          onSubmit={handleSaveTransaction}
+                        >
+                          <div className="grid gap-2">
+                            <Label htmlFor="date">Date</Label>
+                            <Input
+                              id="date"
+                              type="date"
+                              value={newTransaction.date}
+                              onChange={(e) =>
+                                setNewTransaction({
+                                  ...newTransaction,
+                                  date: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Select
+                              id="category"
+                              value={newTransaction.category}
+                              onValueChange={(value) =>
+                                setNewTransaction({
+                                  ...newTransaction,
+                                  category: value,
+                                })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="rent">Rent</SelectItem>
+                                <SelectItem value="groceries">
+                                  Groceries
+                                </SelectItem>
+                                <SelectItem value="utilities">
+                                  Utilities
+                                </SelectItem>
+                                <SelectItem value="entertainment">
+                                  Entertainment
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="amount">Amount</Label>
+                            <Input
+                              id="amount"
+                              type="number"
+                              value={newTransaction.amount}
+                              onChange={(e) =>
+                                setNewTransaction({
+                                  ...newTransaction,
+                                  amount: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                              id="description"
+                              value={newTransaction.description}
+                              onChange={(e) =>
+                                setNewTransaction({
+                                  ...newTransaction,
+                                  description: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <DrawerFooter>
+                            <Button type="submit">Save Transaction</Button>
+                            <DrawerClose asChild id="transactionDrawer">
+                              <Button variant="outline">Cancel</Button>
+                            </DrawerClose>
+                          </DrawerFooter>
+                        </form>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                  <h2 className="font-semibold text-lg md:text-xl">
+                    Transactions
+                  </h2>
+                </div>
+                <div className="border shadow-sm rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell>
+                            {new Date(transaction.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{transaction.category}</TableCell>
+                          <TableCell>
+                            ₹{Number(transaction.amount).toFixed(2)}
+                          </TableCell>
+                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                handleDeleteTransaction(transaction.id)
+                              }
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEditTransaction(transaction)}
+                            >
+                              <DeleteIcon className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={editingTransaction?.description || ""}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      description: e.target.value,
-                    })
-                  }
-                />
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="border shadow-sm rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Percentage</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categoryExpenses.map((expense, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{expense.category}</TableCell>
+                          <TableCell>₹{expense.value.toFixed(2)}</TableCell>
+                          <TableCell>{expense.percentage}%</TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow>
+                        <TableCell>Total</TableCell>
+                        <TableCell>₹{totalExpenses.toFixed(2)}</TableCell>
+                        <TableCell>100%</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <Card>
+                  <div className="flex justify-center">
+                    <CardHeader>
+                      <CardTitle>Expense Breakdown</CardTitle>
+                    </CardHeader>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <CardContent>
+                      <BarChart
+                        data={categoryExpenses.map(({ category, value }) => ({
+                          category,
+                          value,
+                        }))}
+                        className="aspect-square w-[450px]"
+                      />
+                    </CardContent>
+                  </div>
+                </Card>
               </div>
-              <DrawerFooter>
-                <Button type="submit">Update Transaction</Button>
-                <DrawerClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </form>
-          </div>
-        </DrawerContent>
-      </Drawer>
+            </div>
+          </main>
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button
+                id="updateTransactionDrawer"
+                style={{ display: "none" }}
+              />
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Update Transaction</DrawerTitle>
+                <DrawerDescription>
+                  Edit the details of your transaction.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4">
+                <form className="space-y-4" onSubmit={handleUpdateTransaction}>
+                  <div className="grid gap-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={editingTransaction?.date || ""}
+                      onChange={(e) =>
+                        setEditingTransaction({
+                          ...editingTransaction,
+                          date: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      id="category"
+                      value={editingTransaction?.category || ""}
+                      onValueChange={(value) =>
+                        setEditingTransaction({
+                          ...editingTransaction,
+                          category: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rent">Rent</SelectItem>
+                        <SelectItem value="groceries">Groceries</SelectItem>
+                        <SelectItem value="utilities">Utilities</SelectItem>
+                        <SelectItem value="entertainment">
+                          Entertainment
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      value={editingTransaction?.amount || ""}
+                      onChange={(e) =>
+                        setEditingTransaction({
+                          ...editingTransaction,
+                          amount: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={editingTransaction?.description || ""}
+                      onChange={(e) =>
+                        setEditingTransaction({
+                          ...editingTransaction,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <DrawerFooter>
+                    <Button type="submit">Update Transaction</Button>
+                    <DrawerClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </form>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </>
+      ) : (
+        <p className="text-center mt-8">
+          You are not authorized to access this page. Please sign in to view
+          your finances.
+        </p>
+      )}
     </div>
   );
 }
