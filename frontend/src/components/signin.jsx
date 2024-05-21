@@ -89,8 +89,12 @@ export default function SignInComponent() {
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome</CardTitle>
-        <CardDescription>Sign up or sign in to your account</CardDescription>
+        <CardTitle className="text-3  xl font-bold">
+          Welcome to My Finance
+        </CardTitle>
+        <CardDescription>
+          One Stop Solution to track all Personal Expenses
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs className="space-y-4" defaultValue="signup">

@@ -106,10 +106,9 @@ const deleteExpense = async (req, res) => {
 };
 
 const updateExpense = async (req, res) => {
-  const { id } = req.params;
-  const { date, category, amount, description, userId } = req.body;
+  const { id, date, category, amount, description, userid } = req.body;
 
-  if (!date || !category || !amount || !userId) {
+  if (!date || !category || !amount || !userid) {
     return res
       .status(400)
       .json({ error: "Date, category, amount, and userId are required." });
@@ -118,7 +117,7 @@ const updateExpense = async (req, res) => {
   try {
     const result = await pool.query(
       "UPDATE expenses SET date = $1, category = $2, amount = $3, description = $4, userId = $5 WHERE id = $6 RETURNING *",
-      [date, category, amount, description, userId, id]
+      [date, category, amount, description, userid, id]
     );
 
     if (result.rowCount === 0) {

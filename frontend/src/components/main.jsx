@@ -57,11 +57,11 @@ export function Main() {
     description: "",
     userId: 0,
   });
-
   const [totalIncome, setTotalIncome] = useState(0);
   const [editing, setEditing] = useState(false);
   const [newIncome, setNewIncome] = useState(totalIncome);
   const [balance, setBalance] = useState(0);
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -155,6 +155,30 @@ export function Main() {
     }
   };
 
+  const handleUpdateTransaction = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(
+        `http://localhost:8000/api/expense/put/${editingTransaction.id}`,
+        editingTransaction
+      );
+      setTransactions(
+        transactions.map((transaction) =>
+          transaction.id === editingTransaction.id ? response.data : transaction
+        )
+      );
+      setEditingTransaction(null);
+      document.getElementById("updateTransactionDrawer").click();
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+    }
+  };
+
+  const handleEditTransaction = (transaction) => {
+    setEditingTransaction(transaction);
+    document.getElementById("updateTransactionDrawer").click();
+  };
+
   const handleDeleteTransaction = async (id) => {
     try {
       await axios.delete(`http://localhost:8000/api/expense/delete/${id}`);
@@ -206,7 +230,6 @@ export function Main() {
 
   return (
     <div className="flex flex-col w-full">
-      <p>User ID: {newTransaction.userId}</p>
       <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-100/40 px-6 dark:bg-gray-800/40">
         <Link className="lg:hidden" href="#">
           <span className="sr-only">Home</span>
@@ -444,9 +467,13 @@ export function Main() {
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
-                        {/* <Button size="icon" variant="ghost">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleEditTransaction(transaction)}
+                        >
                           <DeleteIcon className="h-4 w-4" />
-                        </Button> */}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -504,6 +531,93 @@ export function Main() {
           </div>
         </div>
       </main>
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button id="updateTransactionDrawer" style={{ display: "none" }} />
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Update Transaction</DrawerTitle>
+            <DrawerDescription>
+              Edit the details of your transaction.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4">
+            <form className="space-y-4" onSubmit={handleUpdateTransaction}>
+              <div className="grid gap-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={editingTransaction?.date || ""}
+                  onChange={(e) =>
+                    setEditingTransaction({
+                      ...editingTransaction,
+                      date: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  id="category"
+                  value={editingTransaction?.category || ""}
+                  onValueChange={(value) =>
+                    setEditingTransaction({
+                      ...editingTransaction,
+                      category: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rent">Rent</SelectItem>
+                    <SelectItem value="groceries">Groceries</SelectItem>
+                    <SelectItem value="utilities">Utilities</SelectItem>
+                    <SelectItem value="entertainment">Entertainment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={editingTransaction?.amount || ""}
+                  onChange={(e) =>
+                    setEditingTransaction({
+                      ...editingTransaction,
+                      amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editingTransaction?.description || ""}
+                  onChange={(e) =>
+                    setEditingTransaction({
+                      ...editingTransaction,
+                      description: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <DrawerFooter>
+                <Button type="submit">Update Transaction</Button>
+                <DrawerClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </form>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
