@@ -15,11 +15,11 @@ Welcome to the Personal Finance Management Project! This application is designed
 8. Navigate to http://localhost:3000/ to land on the HomePage of the application
 
 
-Test Users created for testing the application
-Test User1 ->
-userID - test2
-password - 12345
+### Test Users created for testing the application
+### Test User1 ->
+#### userID - test2
+#### password - 12345
 
-Test User2 ->
-userID - test3
-password - 12345
+### Test User2 ->
+#### userID - test3
+#### password - 12345
