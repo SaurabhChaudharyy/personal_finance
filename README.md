@@ -13,3 +13,13 @@ Welcome to the Personal Finance Management Project! This application is designed
 6. docker build -t frontend-nextjs-app .
 7. Run the docker conatiner using this command --> docker run -p 3000:3000 frontend-nextjs-app (server should run on 3000 port)
 8. Navigate to http://localhost:3000/ to land on the HomePage of the application
+
+
+Test Users created for testing the application
+Test User1 ->
+userID - test2
+password - 12345
+
+Test User2 ->
+userID - test3
+password - 12345
