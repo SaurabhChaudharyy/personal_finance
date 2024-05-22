@@ -17,7 +17,7 @@ const saveExpense = async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Error saving expense:", error);
+    // console.error("Error saving expense:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -33,7 +33,7 @@ const getExpense = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error("Error retrieving expenses:", error);
+    // console.error("Error retrieving expenses:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -48,7 +48,7 @@ const getIncome = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error("Error retrieving expenses:", error);
+    // console.error("Error retrieving expenses:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -80,7 +80,7 @@ const updateIncome = async (req, res) => {
       return res.status(200).json(updateResult.rows[0]);
     }
   } catch (error) {
-    console.error("Error updating income:", error);
+    // console.error("Error updating income:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -100,7 +100,7 @@ const deleteExpense = async (req, res) => {
 
     res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error("Error deleting expense:", error);
+    // console.error("Error deleting expense:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -126,7 +126,7 @@ const updateExpense = async (req, res) => {
 
     res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error("Error updating expense:", error);
+    // console.error("Error updating expense:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
