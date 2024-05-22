@@ -59,12 +59,12 @@ export default function SignInComponent() {
       );
       const data = response.data;
       alert(data.message);
-      if (response.status === 200) {
+      if (data.token) {
         window.location.href = "/home";
         const userId = data.userId;
         if (userId) {
-          console.log("Storing userId in localStorage:", userId);
           localStorage.setItem("userId", userId);
+          localStorage.setItem("authToken", data.token);
         } else {
           console.error("userId not found in response:", data);
         }
