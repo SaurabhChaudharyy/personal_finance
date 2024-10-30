@@ -10,7 +10,7 @@ const {
 
 const router = express.Router();
 
-router.route("/save").post(saveExpense);
+router.post("/save", saveExpense);
 router.get("/get/:userId", getExpense);
 router.get("/get/income/:userId", getIncome);
 router.put("/put/updateincome/:userId", updateIncome);
