@@ -73,7 +73,6 @@ export function Main() {
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
-    // console.log("Retrieved userId from localStorage:", userId);
     if (!userId) {
       window.location.href = "/";
       return;
@@ -83,7 +82,6 @@ export function Main() {
         ...prevState,
         userId: parseInt(userId, 10),
       }));
-      // console.log("Updated newTransaction state with userId:", userId);
       fetchTotalIncome(parseInt(userId, 10));
     }
   }, []);
